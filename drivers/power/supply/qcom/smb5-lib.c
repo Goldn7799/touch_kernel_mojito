@@ -6521,14 +6521,11 @@ void smblib_usb_plugin_locked(struct smb_charger *chg)
 	smblib_dbg(chg, PR_INTERRUPT, "IRQ: usbin-plugin %s\n",
 					vbus_rising ? "attached" : "detached");
 
-	/*
-	#if CONFIG_TOUCHSCREEN_COMMON
+#ifdef CONFIG_TOUCHSCREEN_COMMON
 	g_touchscreen_usb_pulgin.usb_plugged_in = vbus_rising;
-	if (g_touchscreen_usb_pulgin.valid){
+	if (g_touchscreen_usb_pulgin.valid && g_touchscreen_usb_pulgin.event_callback)
 		g_touchscreen_usb_pulgin.event_callback();
-	}
-	#endif
-	*/
+#endif
 
 }
 
