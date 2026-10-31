@@ -105,63 +105,6 @@ static struct fts_gesture_st fts_gesture_data;
 /*****************************************************************************
 * Static function prototypes
 *****************************************************************************/
-static int proc_tp_gesture_read(struct seq_file *sf, void *ignored)
-{
-    struct fts_ts_data *ts_data = fts_data;
-
-    seq_printf(sf, "%d\n", ts_data->gesture_mode);
-    return 0;
-}
-
-static int proc_tp_gesture_open(struct inode *i, struct file *f)
-{
-    return single_open(f, proc_tp_gesture_read, i);
-}
-
-static ssize_t proc_tp_gesture_write(struct file *file,
-        const char __user *buf, size_t size, loff_t *ppos)
-{
-    ssize_t cnt;
-    char *page = NULL;
-    unsigned int input = 0;
-    struct fts_ts_data *ts_data = fts_data;
-
-    page = kzalloc(128, GFP_KERNEL);
-    if (IS_ERR_OR_NULL(page))
-        return -ENOMEM;
-
-    cnt = simple_write_to_buffer(page, sizeof(page), ppos, buf, size);
-    if (cnt <= 0) {
-        kfree(page);
-        return -EINVAL;
-    }
-
-    if (sscanf(page, "%u", &input) != 1) {
-        kfree(page);
-        return -EINVAL;
-    }
-
-    ts_data->gesture_mode = input > 1 ? 1 : 0;
-
-    kfree(page);
-    return cnt;
-}
-
-static const struct file_operations proc_tp_gesture_fops = {
-    .owner = THIS_MODULE,
-    .open = proc_tp_gesture_open,
-    .write = proc_tp_gesture_write,
-    .release = single_release,
-    .read = seq_read,
-    .llseek = seq_lseek,
-};
-
-static void proc_tp_entry_init(void)
-{
-    if (IS_ERR_OR_NULL(proc_create("tp_gesture", 0666, NULL, &proc_tp_gesture_fops)))
-        pr_err("%s: add /proc/tp_gesture error!\n", __func__);
-}
-
 #ifdef CONFIG_TOUCHSCREEN_COMMON
 static ssize_t double_tap_show(struct kobject *kobj,
                                struct kobj_attribute *attr, char *buf)
@@ -179,7 +122,7 @@ static ssize_t double_tap_store(struct kobject *kobj,
 
     rc = kstrtoint(buf, 10, &val);
     if (rc)
-        return -EINVAL;
+    return -EINVAL;
 
     ts_data->gesture_mode = !!val;
     return count;
@@ -217,10 +160,10 @@ static ssize_t fts_gesture_store(
     mutex_lock(&ts_data->input_dev->mutex);
     if (FTS_SYSFS_ECHO_ON(buf)) {
         FTS_DEBUG("enable gesture");
-        ts_data->gesture_mode = ENABLE;
+        lct_fts_tp_gesture_callback(true);
     } else if (FTS_SYSFS_ECHO_OFF(buf)) {
         FTS_DEBUG("disable gesture");
-		ts_data->gesture_mode = DISABLE;
+		lct_fts_tp_gesture_callback(false);
     }
     mutex_unlock(&ts_data->input_dev->mutex);
 
@@ -512,14 +455,12 @@ int fts_gesture_resume(struct fts_ts_data *ts_data)
 #define WAKEUP_ON 5
 int fts_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
 {
-    struct fts_ts_data *ts_data = fts_data;
-
 	FTS_INFO("Enter. type = %u, code = %u, value = %d", type, code, value);
 	if (type == EV_SYN && code == SYN_CONFIG) {
 		if (value == WAKEUP_OFF)
-			ts_data->gesture_mode = DISABLE;
+			lct_fts_tp_gesture_callback(false);
 		else if (value == WAKEUP_ON)
-			ts_data->gesture_mode = ENABLE;
+			lct_fts_tp_gesture_callback(true);
 	}
 	FTS_INFO("Exit");
 	return 0;
@@ -572,7 +513,6 @@ int fts_gesture_init(struct fts_ts_data *ts_data)
     __set_bit(KEY_GESTURE_Z, input_dev->keybit);
 
     fts_create_gesture_sysfs(ts_data->dev);
-    proc_tp_entry_init();
 
 #ifdef CONFIG_TOUCHSCREEN_COMMON
     ret = tp_common_set_double_tap_ops(&double_tap_ops);

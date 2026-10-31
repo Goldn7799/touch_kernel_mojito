@@ -174,6 +174,12 @@
 #define FTS_DEBUG_EN                            0
 
 /*
+ * Linux MultiTouch Protocol
+ * 1: Protocol B(default), 0: Protocol A
+ */
+#define FTS_MT_PROTOCOL_B_EN                    1
+
+/*
  * Report Pressure in multitouch
  * 1:enable(default),0:disable
 */
@@ -209,6 +215,21 @@
  * default: disable
  */
 #define FTS_POWER_SOURCE_CUST_EN                1
+
+/*
+ * enable/disable palm feature
+ */
+#define LCT_TP_PALM_EN                          1
+
+/*
+ * enable/disable 'grip area' feature
+ */
+#define LCT_TP_GRIP_AREA_EN                     1
+
+/*
+ * enable tp usb plugin feature
+ */
+#define LCT_TP_USB_PLUGIN                       1
 
 /****************************************************/
 

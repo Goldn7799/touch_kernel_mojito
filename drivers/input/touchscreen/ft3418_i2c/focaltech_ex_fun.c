@@ -575,10 +575,10 @@ static ssize_t fts_irq_store(
     mutex_lock(&input_dev->mutex);
     if (FTS_SYSFS_ECHO_ON(buf)) {
         FTS_INFO("enable irq");
-        fts_irq_setup(true);
+        fts_irq_enable();
     } else if (FTS_SYSFS_ECHO_OFF(buf)) {
         FTS_INFO("disable irq");
-        fts_irq_setup(false);
+        fts_irq_disable();
     }
     mutex_unlock(&input_dev->mutex);
     return count;
@@ -1168,6 +1168,118 @@ static struct attribute *fts_attributes[] = {
 static struct attribute_group fts_attribute_group = {
     .attrs = fts_attributes
 };
+
+#if LCT_TP_GRIP_AREA_EN
+int lct_fts_tp_get_screen_angle_callback(void)
+{
+	return -EPERM;
+}
+
+int lct_fts_tp_set_screen_angle_callback(int angle)
+{
+	u8 val;
+	int ret = -EIO;
+
+	FTS_FUNC_ENTER();
+
+	if (fts_data->suspended || fts_data->fw_loading) {
+		FTS_ERROR("tp is suspended or flashing, can not to set\n");
+		goto exit;
+	}
+
+	if (angle == 90) {
+		val = 1;
+	} else if (angle == 270) {
+		val = 2;
+	} else {
+		val = 0;
+	}
+
+	//mutex_lock(&fts_data->report_mutex);
+	ret = fts_write_reg(FTS_SET_ANGLE, val);
+	if (ret < 0)
+		FTS_ERROR("write FTS_SET_ANGLE, err\n");
+	//mutex_unlock(&fts_data->report_mutex);
+
+exit:
+	FTS_FUNC_EXIT();
+	return ret;
+}
+#endif
+
+int lct_create_procfs(struct fts_ts_data *ts_data)
+{
+	int ret = 0;
+
+	ret = init_lct_tp_info("[Vendor]SAMSUNG,[FW]unknown,[IC]ft3418\n", NULL);
+	if (ret) {
+		FTS_ERROR("create /proc/tp_info & /proc/tp_lockdown_info fail");
+		goto err_init_lct_tp_info_fail;
+	} else {
+		//set_lct_tp_info_callback(lct_fts_get_tpfwver);
+		FTS_INFO("create /proc/tp_info & /proc/tp_lockdown_info succeeded");
+	}
+
+	ret = init_lct_tp_gesture(lct_fts_tp_gesture_callback);
+	if (ret < 0) {
+		FTS_ERROR("init_lct_tp_gesture Failed!");
+		goto err_init_lct_tp_gesture_fail;
+	} else {
+		FTS_INFO("init_lct_tp_gesture Succeeded!");
+	}
+
+#if LCT_TP_GRIP_AREA_EN
+		ret = init_lct_tp_grip_area(lct_fts_tp_set_screen_angle_callback, lct_fts_tp_get_screen_angle_callback);
+		if (ret < 0) {
+			FTS_ERROR("init_lct_tp_work Failed!");
+			goto err_init_lct_tp_grip_area_fail;
+		} else {
+			FTS_INFO("init_lct_tp_work Succeeded!");
+		}
+#endif
+
+#if LCT_TP_PALM_EN
+	ret = init_lct_tp_palm(lct_fts_tp_palm_callback);
+	if (ret < 0) {
+		FTS_ERROR("init_lct_tp_palm Failed!");
+		goto err_init_lct_tp_palm_fail;
+	} else {
+		FTS_INFO("init_lct_tp_palm Succeeded!");
+	}
+#endif
+
+	return ret;
+
+#if LCT_TP_PALM_EN
+	err_init_lct_tp_palm_fail:
+	uninit_lct_tp_palm();
+#endif
+#if LCT_TP_GRIP_AREA_EN
+	err_init_lct_tp_grip_area_fail:
+	uninit_lct_tp_grip_area();
+#endif
+
+	err_init_lct_tp_gesture_fail:
+	uninit_lct_tp_gesture();
+	err_init_lct_tp_info_fail:
+	uninit_lct_tp_info();
+	return ret;
+}
+
+int lct_remove_procfs(struct fts_ts_data *ts_data)
+{
+
+#if LCT_TP_PALM_EN
+	uninit_lct_tp_palm();
+#endif
+#if LCT_TP_GRIP_AREA_EN
+	uninit_lct_tp_grip_area();
+#endif
+	uninit_lct_tp_gesture();
+    uninit_lct_tp_info();
+    return 0;
+}
+
 
 int fts_create_sysfs(struct fts_ts_data *ts_data)
 {
