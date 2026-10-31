@@ -1,18 +1,38 @@
 Linux kernel
 ============
+How To Install (You must install custom rom with custom recovery first.
+-Fastboot
+fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
+fastboot -w (Erase All Data)
+fastboot reboot recovery
+-Recovery
+install touch-kernel-mojito-[version].zip
+reboot to system
 
-This file was moved to Documentation/admin-guide/README.rst
+How To Build On Fedora
+-Install Packages
+sudo dnf install bc bison flex ccache clang lld llvm make openssl-devel ncurses-devel elfutils-libelf-devel gcc-c++ gcc-aarch64-linux-gnu gcc-arm-linux-gnu glibc-devel.i686 libgcc.i686 zip -y
+git clone --depth=1 https://github.com/kdrag0n/proton-clang.git ~/proton-clang
 
-Please notice that there are several guides for kernel developers and users.
-These guides can be rendered in a number of formats, like HTML and PDF.
 
-In order to build the documentation, use ``make htmldocs`` or
-``make pdfdocs``.
+-Setup Environment
+export ARCH=arm64
+export SUBARCH=arm64
+export PATH="$HOME/proton-clang/bin:$PATH"
+export CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE_ARM32=arm-linux-gnu-
+export CC=clang
+export CFLAGS="-l/usr/include"
+export LDFLAGS="-L/usr/lib64"
 
-There are various text files in the Documentation/ subdirectory,
-several of them using the Restructured Text markup notation.
-See Documentation/00-INDEX for a list of what is contained in each file.
+-Clean Workspace Output
+make clean && make mrproper && rm -rf out
 
-Please read the Documentation/process/changes.rst file, as it contains the
-requirements for building and running the kernel, and information about
-the problems which may result by upgrading your kernel.
+-Build Initial
+make O=out CC=clang HOSTCC=clang HOSTCXX=clang++ vendor/mojito_defconfig
+
+-Build Kernel
+make -j$(nproc) O=out CC=clang HOSTCC=clang HOSTCXX=clang++ LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip CROSS_COMPILE_ARM32=arm-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnu-
+
+-Flash
+Use Anykernel3 to flash
