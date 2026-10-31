@@ -25,14 +25,15 @@ export CC=clang
 export CFLAGS="-l/usr/include"
 export LDFLAGS="-L/usr/lib64"
 
--Installing SukiSU (optional)
-curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+-Installing BakaSU (optional)
+curl -LSs "https://raw.githubusercontent.com/Baka-SU/BakaSU/main/kernel/setup.sh" | bash
 add code bellow to arch/arm64/configs/vendor/mojito_defconfig
 CONFIG_KSU=y
 CONFIG_KSU_MANUAL_HOOK=y
 CONFIG_KPROBES=y
 CONFIG_KPROBE_EVENTS=y
 CONFIG_KALLSYMS_ALL=y
+CONFIG_DEBUG_KERNEL=y
 
 -Clean Workspace Output
 make clean && make mrproper && rm -rf out
