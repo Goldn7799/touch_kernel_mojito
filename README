@@ -1,7 +1,7 @@
 Linux kernel
 ============
 How To Install (You must install custom rom with custom recovery first.
--Fastboot
+-Fastboot (optional if it wont boot)
 fastboot --disable-verity --disable-verification flash vbmeta vbmeta.img
 fastboot -w (Erase All Data)
 fastboot reboot recovery
