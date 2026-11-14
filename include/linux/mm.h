@@ -2906,4 +2906,9 @@ extern struct reclaim_param reclaim_task_anon(struct task_struct *task,
 #endif
 
 #endif /* __KERNEL__ */
+#ifndef CONFIG_SPECULATIVE_PAGE_FAULT
+static inline void vm_write_begin(struct vm_area_struct *vma) {}
+static inline void vm_write_end(struct vm_area_struct *vma) {}
+#endif
+
 #endif /* _LINUX_MM_H */
