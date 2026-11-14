@@ -3,8 +3,7 @@
 #
 
 config TOUCHSCREEN_FT3418_I2C
-    bool "Focaltech Touchscreen for mojito"
-    depends on DRM
+    bool "Focaltech Touchscreen"
     default y
     help
       Say Y here if you have Focaltech touch panel.
@@ -12,6 +11,6 @@ config TOUCHSCREEN_FT3418_I2C
       
 config TOUCHSCREEN_FT3418_I2C_DIRECTORY
     string "Focaltech ts directory name"
-    default "focaltech_touch_ft3418_i2c"
+    default "focaltech_touch"
     depends on TOUCHSCREEN_FT3418_I2C
     

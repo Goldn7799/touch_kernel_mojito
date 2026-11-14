@@ -1,0 +1,14 @@
+make -j$(nproc) O=/var/tmp/build/out ARCH=arm64 SUBARCH=arm64 \
+  CC=clang \
+  CLANG_TRIPLE=aarch64-linux-gnu- \
+  CROSS_COMPILE=aarch64-linux-gnu- \
+  CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+  CROSS_COMPILE_COMPAT=arm-linux-gnueabi- \
+  LD=ld.lld \
+  AR=llvm-ar \
+  NM=llvm-nm \
+  OBJCOPY=llvm-objcopy \
+  OBJDUMP=llvm-objdump \
+  STRIP=llvm-strip \
+  HOSTCC="gcc -B/usr/bin" \
+  HOSTCXX="g++ -B/usr/bin"

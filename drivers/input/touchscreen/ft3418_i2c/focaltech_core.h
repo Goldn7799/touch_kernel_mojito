@@ -64,8 +64,15 @@
 #include <linux/dma-mapping.h>
 #include "focaltech_common.h"
 
-#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
-#include "../xiaomi/xiaomi_touch.h"
+// include longcheer header
+#include "../lct_tp_info.h"
+#include "../lct_tp_selftest.h"
+#include "../lct_tp_gesture.h"
+#if LCT_TP_PALM_EN
+#include "../lct_tp_palm.h"
+#endif
+#if LCT_TP_GRIP_AREA_EN
+#include "../lct_tp_grip_area.h"
 #endif
 #ifdef CONFIG_PM
 #include <linux/pm_runtime.h>
@@ -180,7 +187,6 @@ struct fts_ts_data {
     struct delayed_work esdcheck_work;
     struct delayed_work prc_work;
     struct work_struct resume_work;
-    struct work_struct suspend_work;
     struct ftxxxx_proc proc;
     spinlock_t irq_lock;
     struct mutex report_mutex;
@@ -195,6 +201,7 @@ struct fts_ts_data {
 #endif
     bool suspended;
     bool fw_loading;
+    bool irq_disabled;
     bool power_disabled;
     bool glove_mode;
     bool cover_mode;
@@ -220,17 +227,28 @@ struct fts_ts_data {
     struct pinctrl_state *pins_suspend;
     struct pinctrl_state *pins_release;
 #endif
-    struct notifier_block drm_notif;
-
-#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
-    u8 palm_sensor_switch;
-    bool palm_sensor_changed;
-    bool gamemode_enabled;
+#if defined(CONFIG_FB) || defined(CONFIG_DRM)
+    struct notifier_block fb_notif;
+#elif defined(CONFIG_HAS_EARLYSUSPEND)
+    struct early_suspend early_suspend;
 #endif
+
 	struct mutex reg_lock;
 	struct device *fts_touch_dev;
 	struct class *fts_tp_class;
+#if LCT_TP_PALM_EN
+		int palm_changed;
+#endif
+
 };
+
+#if LCT_TP_USB_PLUGIN
+typedef struct touchscreen_usb_plugin_data {
+    bool valid;
+    bool usb_plugged_in;
+    void (*event_callback)(void);
+} touchscreen_usb_plugin_data_t;
+#endif
 
 enum _FTS_BUS_TYPE {
     BUS_TYPE_NONE,
@@ -265,6 +283,13 @@ int fts_gesture_resume(struct fts_ts_data *ts_data);
 int fts_create_apk_debug_channel(struct fts_ts_data *);
 void fts_release_apk_debug_channel(struct fts_ts_data *);
 
+/* Longcheer procfs */
+int lct_create_procfs(struct fts_ts_data *ts_data);
+int lct_remove_procfs(struct fts_ts_data *ts_data);
+
+/* Longcheer set gesture mode */
+int lct_fts_tp_gesture_callback(bool flag);
+
 /* ADB functions */
 int fts_create_sysfs(struct fts_ts_data *ts_data);
 int fts_remove_sysfs(struct fts_ts_data *ts_data);
@@ -284,6 +309,7 @@ int fts_esdcheck_resume(void);
 #if FTS_TEST_EN
 int fts_test_init(struct fts_ts_data *ts_data);
 int fts_test_exit(struct fts_ts_data *ts_data);
+int lct_tp_selftest_all(void);
 #endif
 
 /* Point Report Check*/
@@ -308,5 +334,8 @@ int fts_ex_mode_init(struct fts_ts_data *ts_data);
 int fts_ex_mode_exit(struct fts_ts_data *ts_data);
 int fts_ex_mode_recovery(struct fts_ts_data *ts_data);
 int fts_flash_read(u32 addr, u8 *buf, u32 len);
-void fts_irq_setup(bool enable);
+int lct_fts_set_charger_mode(bool en);
+void fts_irq_disable(void);
+void fts_irq_enable(void);
+int lct_fts_tp_palm_callback(bool en);
 #endif /* __LINUX_FOCALTECH_CORE_H__ */
